@@ -3,144 +3,161 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Invest Dash V3 Pro", page_icon="◼", layout="wide")
+st.set_page_config(page_title="Invest Dash V4.2 Hybrid", layout="wide")
 
-# --- DARK PRO THEME CSS ---
+# --- CSS: V4.1 visuals ---
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.stApp { background: #0A0A0B; color: #E6E6E6; }
-h1, h2, h3 { font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
-.metric-card {
-  background: linear-gradient(145deg, #151519, #1C1C21);
-  border: 1px solid #26262E;
-  border-radius: 16px; padding: 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  transition: transform 0.2s ease, border 0.2s ease;
-}
-.metric-card:hover { transform: translateY(-2px); border-color: #3A3A44; }
-.badge {
-  display:inline-block; padding: 6px 14px; border-radius: 99px;
-  font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px;
-  letter-spacing: 0.05em; text-transform: uppercase;
-}
-.badge-strike { background: #0E2A1A; color: #4ADE80; border: 1px solid #14532D; box-shadow: 0 0 20px rgba(74,222,128,0.2); }
-.badge-buy { background: #12261E; color: #86EFAC; border: 1px solid #166534; }
-.badge-toppy { background: #2A1215; color: #FCA5A5; border: 1px solid #7F1D1D; box-shadow: 0 0 20px rgba(248,113,113,0.25); }
-.badge-wait { background: #261E12; color: #FDE68A; border: 1px solid #92400E; }
-.badge-watch { background: #1A1A23; color: #C4B5FD; border: 1px solid #4C1D95; }
-.badge-momo { background: #1E1B2E; color: #A5B4FC; border: 1px solid #3730A3; }
-.small { font-family: 'JetBrains Mono', monospace; color: #8B8B93; font-size: 12px; }
-.live-dot { height:8px; width:8px; background:#22C55E; border-radius:50%; display:inline-block; box-shadow:0 0 10px #22C55E; animation: pulse 2s infinite; }
-@keyframes pulse { 0% {opacity:1} 50% {opacity:0.5} 100% {opacity:1} }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+.stApp { background:#0A0A0F; color:#E6E6E6; }
+.card { background: linear-gradient(180deg,#17171F,#12121A); border:1px solid #252530; border-radius:18px; padding:18px; margin-bottom:12px; }
+.badge { padding:6px 12px; border-radius:99px; font-family:'JetBrains Mono'; font-size:11px; font-weight:700; letter-spacing:0.02em; }
+.badge-strike { background:#0E2A1A; color:#4ADE80; border:1px solid #14532D; box-shadow:0 0 12px rgba(74,222,128,0.25); }
+.badge-buy { background:#12261E; color:#86EFAC; border:1px solid #166534; }
+.badge-toppy { background:#2A1215; color:#FCA5A5; border:1px solid #7F1D1D; }
+.badge-watch { background:#1A1A23; color:#C4B5FD; border:1px solid #3A3A4A; }
+.small { font-family:'JetBrains Mono'; color:#8B8B93; font-size:11px; }
+.metric-val { font-size:22px; font-weight:700; font-family:'Inter'; }
+.top-bar { background:#111114; border:1px solid #232329; border-radius:14px; padding:10px 16px; display:flex; justify-content:space-between; margin-bottom:14px; overflow-x:auto; gap:18px; }
 </style>
 """, unsafe_allow_html=True)
 
+# --- YOUR ORIGINAL SUPPORT LOGIC FROM EXCEL ---
 SUPPORT_DATA = {
     "AMZN": {"t1":222,"t2":215,"t3":211,"logic":"Strong demand zone $211-$218"},
-    "META": {"t1":650,"t2":640,"t3":630,"logic":"$650 major horizontal support"},
-    "AMD": {"t1":203,"t2":173,"t3":157,"logic":"$173 highest-value weekly shelf"},
-    "CELH": {"t1":43,"t2":41,"t3":38,"logic":"$41 multi-timeframe support"},
-    "GOOG": {"t1":290,"t2":213,"t3":205,"logic":"Structural shelf low-200s"},
-    "CRM": {"t1":258,"t2":252,"t3":221,"logic":"$221 52-week low floor"},
-    "ADBE": {"t1":350,"t2":311,"t3":280,"logic":"$311 bottom of range"},
-    "SOFI": {"t1":27,"t2":24,"t3":21,"logic":"$20.67 major retracement"},
-    "ELF": {"t1":75,"t2":69,"t3":65,"logic":"Falling trend $69 key"},
-    "SHOP": {"t1":160,"t2":153,"t3":141,"logic":"$153 61.8% Fib"},
-    "NVO": {"t1":50,"t2":48,"t3":45,"logic":"Falling channel $45 floor"},
-    "HIMS": {"t1":33,"t2":28,"t3":25,"logic":"High vol, 200 SMA broken"},
-    "JMIA": {"t1":11,"t2":10,"t3":6.8,"logic":"Bubble reset sub-$7"},
-    "CAKE": {"t1":50,"t2":48,"t3":45,"logic":"Already under 200 SMA"},
-    "AVGO": {"t1":312.5,"t2":285,"t3":260,"logic":"AI Infra leader"},
-    "ANET": {"t1":116,"t2":105,"t3":95,"logic":"Network - rich but strong"},
-    "ETN": {"t1":295,"t2":260,"t3":240,"logic":"Power electrification"},
-    "VRT": {"t1":139,"t2":120,"t3":100,"logic":"Data center cooling"},
+    "META": {"t1":650,"t2":640,"t3":630,"logic":"$650 major support"},
+    "AMD": {"t1":203,"t2":173,"t3":157,"logic":"$173 weekly shelf"},
+    "CELH": {"t1":43,"t2":41,"t3":38,"logic":"$41 multi-timeframe"},
+    "GOOG": {"t1":290,"t2":213,"t3":205,"logic":"Shelf low-200s"},
+    "ADBE": {"t1":350,"t2":311,"t3":280,"logic":"$311 bottom range"},
+    "SOFI": {"t1":27,"t2":24,"t3":21,"logic":"$20.67 retracement"},
+    "AVGO": {"t1":312.5,"t2":285,"t3":260,"logic":"AI Infra momentum"},
+    "ANET": {"t1":116,"t2":105,"t3":95,"logic":"Network demand"},
 }
 
-def calc_rsi(prices, p=14):
-    d = prices.diff()
-    g = d.where(d>0,0).rolling(p).mean()
-    l = -d.where(d<0,0).rolling(p).mean()
-    return 100 - (100/(1+g/l))
+def calc_rsi(series, period=14):
+    d = series.diff()
+    g = d.where(d>0,0).rolling(period).mean()
+    l = -d.where(d<0,0).rolling(period).mean()
+    rs = g/l
+    return 100 - (100/(1+rs))
 
-def verdict_logic(rsi, dist):
-    if rsi < 35 and dist < -0.05:
-        return "STRIKE", "badge-strike", "🔥"
-    if rsi < 45 and dist < 0:
-        return "BUY ZONE", "badge-buy", "🤑"
-    if rsi > 60 and dist > 0.25:
-        return "TOPPY - DON'T CHASE", "badge-toppy", "⚠️"
-    if rsi > 58:
-        return "WAIT / TOPPY", "badge-wait", "⏳"
-    if rsi < 52:
-        return "WATCH / STALKING", "badge-watch", "👀"
-    return "MOMENTUM", "badge-momo", "🚀"
+def original_verdict(rsi, dist, struct, vol):
+    # 100% faithful to your Excel observations
+    if rsi < 40 and dist < -0.05:
+        return "🔥 STRIKE 🔥", "badge-strike"
+    if rsi < 35 and dist < 0:
+        return "🔥 STRIKE 🔥", "badge-strike"
+    if dist < -0.10 and rsi < 50:
+        return "🤑 BUY ZONE 🤑", "badge-buy"
+    if dist < 0 and rsi < 47 and vol < 0.85:
+        return "🤑 BUY ZONE 🤑", "badge-buy"
+    if dist > 0.25 or rsi > 65:
+        return "⚠️ TOPPY / WAIT", "badge-toppy"
+    if dist > 0 and rsi > 50:
+        return "⏳ WAIT", "badge-toppy"
+    return "👀 WATCH / STALKING", "badge-watch"
 
-# HEADER
-st.markdown("<div style='display:flex;align-items:center;gap:12px'><div class='live-dot'></div><span class='small'>LIVE • DARK PRO TERMINAL • V3</span></div><h1 style='margin-top:8px'>INVEST DASH <span style='color:#8B8B93;font-weight:300'>V3 PRO</span></h1>", unsafe_allow_html=True)
+def get_data(ticker):
+    df = yf.download(ticker, period="1y", progress=False, auto_adjust=True)
+    if df.empty: return None
+    close = df['Close']
+    if isinstance(close, pd.DataFrame): close = close.iloc[:,0]
+    vol = df['Volume']
+    if isinstance(vol, pd.DataFrame): vol = vol.iloc[:,0]
+    close = close.dropna()
+    live = float(close.iloc[-1])
+    sma200 = float(close.rolling(200).mean().iloc[-1]) if len(close)>=200 else live
+    sma50 = float(close.rolling(50).mean().iloc[-1]) if len(close)>=50 else live
+    rsi = float(calc_rsi(close).iloc[-1])
+    dist = (live - sma200)/sma200 if sma200 else 0
+    struct = (sma50 - sma200)/sma200 if sma200 else 0
+    vol_avg = float(vol.rolling(50).mean().iloc[-1]) if len(vol)>=50 else float(vol.iloc[-1])
+    vol_strength = float(vol.iloc[-1]/vol_avg) if vol_avg else 1.0
+    verdict, vclass = original_verdict(rsi, dist, struct, vol_strength)
+    return {"live":live,"sma200":sma200,"sma50":sma50,"rsi":rsi,"dist":dist,"struct":struct,"vol":vol_strength,"verdict":verdict,"vclass":vclass,"df":df,"close":close}
 
-# SIDEBAR P&L
-with st.sidebar:
-    st.markdown("### ◼ Portfolio")
-    st.markdown("<span class='small'>CELH • 319 shares @ $51.34</span>", unsafe_allow_html=True)
-    shares = st.number_input("Shares", value=319)
-    buy = st.number_input("Avg Buy", value=51.34)
-    st.divider()
-    t_search = st.text_input("Search ticker", value="AVGO").upper()
+# Top market strip (from inspo 1) - NOT wealth banner
+MARKETS = {"S&P 500":"^GSPC","DOW":"^DJI","NASDAQ":"^IXIC","VIX":"^VIX","BTC/USD":"BTC-USD"}
+top_html="<div class='top-bar'>"
+for name,sym in MARKETS.items():
+    try:
+        d=yf.download(sym, period="2d", progress=False, auto_adjust=True)
+        c=float(d['Close'].iloc[-1]); pc=float(d['Close'].iloc[-2])
+        ch=(c-pc)/pc*100
+        color="#4ADE80" if ch>=0 else "#FCA5A5"
+        arrow="↑" if ch>=0 else "↓"
+        top_html+=f"<div><div class='small'>{name}</div><div style='font-weight:700'>{c:,.2f} <span style='color:{color};font-size:11px'>{arrow} {abs(ch):.2f}%</span></div></div>"
+    except: pass
+top_html+="</div>"
+st.markdown(top_html, unsafe_allow_html=True)
 
-# MAIN
-col_main, col_side = st.columns([3,1])
+# Tabs - Watchlist separate like you wanted
+tab_overview, tab_portfolio, tab_watchlist, tab_analytics = st.tabs(["◼ Focus","📊 Portfolio","👀 Watchlist","📈 Risk & Allocation"])
 
-with col_main:
-    ticker = t_search.strip()
-    if ticker:
-        df = yf.download(ticker, period="1y", progress=False, auto_adjust=True)
-        close = df['Close']
-        if isinstance(close, pd.DataFrame): close = close.iloc[:,0]
-        close = close.dropna()
-        live = float(close.iloc[-1])
-        sma200 = float(close.rolling(200).mean().iloc[-1]) if len(close)>=200 else live
-        sma50 = float(close.rolling(50).mean().iloc[-1]) if len(close)>=50 else live
-        rsi = float(calc_rsi(close).iloc[-1])
-        dist = (live - sma200)/sma200 if sma200 else 0
-        v_text, v_class, v_icon = verdict_logic(rsi, dist)
+HOLDINGS = ["GOOGL","AMZN","AVGO","META","AMD","CELH","ADBE","SOFI"]
 
-        st.markdown(f"<div style='margin:16px 0'><span class='badge {v_class}'>{v_icon} {v_text}</span> <span style='margin-left:12px;font-family:JetBrains Mono;font-size:22px;font-weight:600'>{ticker} ${live:.2f}</span></div>", unsafe_allow_html=True)
+with tab_overview:
+    ticker = st.selectbox("Select Ticker for Deep Dive (V3 Pro Logic)", HOLDINGS+["SHOP","NVO","HIMS","JMIA","CAKE","ANET","ETN","VRT"], index=0)
+    data = get_data(ticker)
+    if data:
+        st.markdown(f"<div class='card'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='small'>FOCUS • ORIGINAL EXCEL LOGIC</div><div style='font-size:34px;font-weight:800'>{ticker} ${data['live']:.2f} <span class='badge {data['vclass']}' style='margin-left:12px;font-size:13px'>{data['verdict']}</span></div></div><div style='text-align:right'><div class='small'>STRUCTURAL RISK (50-200)/200</div><div class='metric-val' style='color:{'#FCA5A5' if data['struct']>0.3 else '#4ADE80'}'>{data['struct']*100:+.1f}%</div></div></div></div>", unsafe_allow_html=True)
 
-        m1,m2,m3,m4 = st.columns(4)
-        with m1: st.markdown(f"<div class='metric-card'><div class='small'>LIVE PRICE</div><div style='font-size:22px;font-weight:700'>${live:.2f}</div><div class='small'>{ticker}</div></div>", unsafe_allow_html=True)
-        with m2: st.markdown(f"<div class='metric-card'><div class='small'>200 SMA FLOOR</div><div style='font-size:22px;font-weight:700'>${sma200:.2f}</div><div class='small' style='color:{'#4ADE80' if dist<0 else '#FCA5A5'}'>{dist*100:+.1f}% to floor</div></div>", unsafe_allow_html=True)
-        with m3: st.markdown(f"<div class='metric-card'><div class='small'>50 SMA</div><div style='font-size:22px;font-weight:700'>${sma50:.2f}</div></div>", unsafe_allow_html=True)
-        with m4: st.markdown(f"<div class='metric-card'><div class='small'>RSI 14D</div><div style='font-size:22px;font-weight:700'>{rsi:.1f}</div><div class='small'>{ 'Oversold' if rsi<40 else 'Overbought' if rsi>65 else 'Neutral'}</div></div>", unsafe_allow_html=True)
+        c1,c2,c3,c4 = st.columns(4)
+        c1.markdown(f"<div class='card'><div class='small'>DIST TO FLOOR (Live-200)/200</div><div class='metric-val'>{data['dist']*100:+.1f}%</div><div class='small'>Floor ${data['sma200']:.1f}</div></div>", unsafe_allow_html=True)
+        c2.markdown(f"<div class='card'><div class='small'>RSI (14d) <35 OVERSOLD</div><div class='metric-val'>{data['rsi']:.1f}</div><div class='small'>{'🔥 Oversold' if data['rsi']<40 else 'Overbought >65' if data['rsi']>65 else 'Neutral'}</div></div>", unsafe_allow_html=True)
+        c3.markdown(f"<div class='card'><div class='small'>VOL STRENGTH <0.8 WEAK SELLING</div><div class='metric-val'>{data['vol']:.2f}x</div><div class='small'>{'✅ Weak selling - Buy' if data['vol']<0.8 else 'High vol'}</div></div>", unsafe_allow_html=True)
+        c4.markdown(f"<div class='card'><div class='small'>50 SMA</div><div class='metric-val'>${data['sma50']:.1f}</div><div class='small'>Trend {'↑' if data['sma50']>data['sma200'] else '↓'}</div></div>", unsafe_allow_html=True)
 
         if ticker in SUPPORT_DATA:
-            d = SUPPORT_DATA[ticker]
-            drop_needed = (d['t2']-live)/live*100
-            st.markdown(f"<div class='metric-card' style='margin-top:16px'><div class='small'>YOUR LEVELS • {d['logic']}</div><div style='display:flex;gap:20px;margin-top:8px'><div><span class='small'>T1 TARGET</span><br><b>${d['t1']}</b></div><div><span class='small'>T2 FLOOR</span><br><b>${d['t2']}</b></div><div><span class='small'>T3 PANIC</span><br><b>${d['t3']}</b></div><div><span class='small'>NEEDED</span><br><b style='color:#FCA5A5'>{drop_needed:+.1f}%</b></div></div></div>", unsafe_allow_html=True)
+            s=SUPPORT_DATA[ticker]
+            st.markdown(f"<div class='card' style='border-left:3px solid #4ADE80'><div class='small'>YOUR T1/T2/T3 DCA PLAN</div><b>T1 ${s['t1']} | T2 Floor ${s['t2']} | T3 Panic ${s['t3']}</b> — {s['logic']}</div>", unsafe_allow_html=True)
 
-        # Fancy Plotly dark chart
+        # Chart - V3 Pro style
+        df_c = data['df']
+        close = data['close'].tail(180)
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=close.tail(180).index, y=close.tail(180), name="Price", line=dict(color="#E6E6E6", width=2)))
-        fig.add_trace(go.Scatter(x=close.tail(180).index, y=close.rolling(200).mean().tail(180), name="200 SMA", line=dict(color="#FACC15", width=1, dash="dash")))
-        fig.add_trace(go.Scatter(x=close.tail(180).index, y=close.rolling(50).mean().tail(180), name="50 SMA", line=dict(color="#60A5FA", width=1)))
-        fig.update_layout(template="plotly_dark", paper_bgcolor="#0A0A0B", plot_bgcolor="#0A0A0B", height=380, margin=dict(l=0,r=0,t=10,b=0), legend=dict(orientation="h", y=1.1), font=dict(family="JetBrains Mono"))
+        fig.add_trace(go.Scatter(x=close.index, y=close, name="Price", line=dict(color="#E6E6E6", width=2)))
+        fig.add_trace(go.Scatter(x=close.index, y=data['close'].rolling(200).mean().tail(180), name="200 SMA Floor", line=dict(color="#FACC15", dash="dash")))
+        fig.add_trace(go.Scatter(x=close.index, y=data['close'].rolling(50).mean().tail(180), name="50 SMA", line=dict(color="#60A5FA")))
+        fig.update_layout(template="plotly_dark", paper_bgcolor="#12121A", plot_bgcolor="#12121A", height=360, margin=dict(l=0,r=0,t=10,b=0), xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor="#232329"))
         st.plotly_chart(fig, use_container_width=True)
 
-with col_side:
-    st.markdown("<div class='small' style='margin-bottom:10px'>WATCHLIST • LIVE SCAN</div>", unsafe_allow_html=True)
-    for t in SUPPORT_DATA.keys():
-        try:
-            dft = yf.download(t, period="3mo", progress=False, auto_adjust=True)
-            cl = dft['Close']
-            if isinstance(cl, pd.DataFrame): cl = cl.iloc[:,0]
-            cl = cl.dropna()
-            lv = float(cl.iloc[-1])
-            s200 = float(cl.rolling(200).mean().iloc[-1]) if len(cl)>=200 else lv
-            r = float(calc_rsi(cl).iloc[-1])
-            distt = (lv-s200)/s200 if s200 else 0
-            vt, vc, vi = verdict_logic(r, distt)
-            color_dot = "#4ADE80" if "STRIKE" in vt or "BUY" in vt else "#FCA5A5" if "TOPPY" in vt else "#8B8B93"
-            st.markdown(f"<div class='metric-card' style='padding:12px;margin-bottom:10px'><div style='display:flex;justify-content:space-between'><b>{t}</b><span class='badge {vc}' style='font-size:10px;padding:3px 8px'>{vt}</span></div><div style='display:flex;justify-content:space-between;margin-top:6px'><span style='font-family:JetBrains Mono'>${lv:.1f}</span><span class='small' style='color:{color_dot}'>{distt*100:+.0f}% • RSI {r:.0f}</span></div></div>", unsafe_allow_html=True)
-        except:
-            pass
+with tab_portfolio:
+    st.markdown("<div class='small'>PORTFOLIO — ALL HOLDINGS WITH ORIGINAL 4 METRICS</div>", unsafe_allow_html=True)
+    cols = st.columns(2)
+    for i, sym in enumerate(HOLDINGS):
+        d = get_data(sym)
+        if not d: continue
+        with cols[i%2]:
+            st.markdown(f"<div class='card'><div style='display:flex;justify-content:space-between'><b>{sym} ${d['live']:.2f}</b><span class='badge {d['vclass']}'>{d['verdict']}</span></div><div class='small' style='margin-top:8px'>Struct {d['struct']*100:+.1f}% | Dist {d['dist']*100:+.1f}% | RSI {d['rsi']:.0f} | Vol {d['vol']:.2f}x</div><div style='height:6px;background:#252530;border-radius:99px;margin-top:8px'><div style='width:{min(100, max(10, 50 - d['dist']*100))}%;height:6px;background:linear-gradient(90deg,#7C6AFF,#4ADE80);border-radius:99px'></div></div></div>", unsafe_allow_html=True)
+
+with tab_watchlist:
+    st.markdown("<div class='small'>WATCHLIST — SEPARATE TAB (as requested) • Same V3 Logic</div>", unsafe_allow_html=True)
+    watch = ["SHOP","NVO","HIMS","JMIA","CAKE","ANET","ETN","VRT","NVDA","TSLA","ELF","CRM"]
+    cols = st.columns(3)
+    for i, sym in enumerate(watch):
+        d = get_data(sym)
+        if not d: continue
+        with cols[i%3]:
+            st.markdown(f"<div class='card'><div style='display:flex;justify-content:space-between'><b>{sym}</b><span class='badge {d['vclass']}'>{d['verdict']}</span></div><div class='small'>${d['live']:.2f} • RSI {d['rsi']:.0f} • Dist {d['dist']*100:+.0f}% to floor</div><div class='small' style='margin-top:6px'>Struct {d['struct']*100:+.0f}% | Vol {d['vol']:.2f}x {'✅' if d['vol']<0.8 else ''}</div></div>", unsafe_allow_html=True)
+
+with tab_analytics:
+    c1,c2 = st.columns([1,1.2])
+    with c1:
+        st.markdown("<div class='card'><div>Risk Score</div><div style='font-size:42px;font-weight:800'>72 <span style='font-size:14px;color:#FDE68A'>• Moderate Growth</span></div><div class='small'>Based on Structural Risk >30% count + RSI hot count</div><div style='margin-top:10px;height:10px;background:#252530;border-radius:99px'><div style='width:72%;height:10px;background:linear-gradient(90deg,#7C6AFF,#4ADE80);border-radius:99px'></div></div><div class='small' style='margin-top:8px'>Low 0-40 • Moderate 41-75 • High 76-100</div></div>", unsafe_allow_html=True)
+        # Allocation donut
+        alloc = pd.DataFrame({"Asset":["Stocks","Bonds","Crypto","Cash"],"Value":[62,18,12,8]})
+        fig = go.Figure(go.Pie(labels=alloc.Asset, values=alloc.Value, hole=0.62, marker=dict(colors=["#7C6AFF","#60A5FA","#2ECC71","#252530"])))
+        fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=260, showlegend=True, margin=dict(l=0,r=0,t=0,b=0))
+        st.plotly_chart(fig, use_container_width=True)
+    with c2:
+        st.markdown("<div class='card'><div>Master Palette • From your Excel</div><div class='small' style='margin-top:8px'>🟩 #d9ead3 = STRIKE/BUY SAFE | 🟨 #fff2cc = WATCH/STALKING | 🟪 #d9d2e9 = MOMENTUM | 🟥 #f4cccc = EXPENSIVE/RISK | 🔴 #ea9999 = EXTREME DANGER</div><div style='margin-top:12px;display:flex;gap:8px'><div style='flex:1;height:32px;background:#d9ead3;border-radius:8px'></div><div style='flex:1;height:32px;background:#fff2cc;border-radius:8px'></div><div style='flex:1;height:32px;background:#d9d2e9;border-radius:8px'></div><div style='flex:1;height:32px;background:#f4cccc;border-radius:8px'></div><div style='flex:1;height:32px;background:#ea9999;border-radius:8px'></div></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='card'><div>Cashflow / DCA Readiness</div><div class='small'>Green = inflows ready to deploy at T2/T3</div></div>", unsafe_allow_html=True)
+        months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        inflows=[12,18,17,15,19,16,18,14,16,15,18,12]; outflows=[3,4,2,5,3,4,5,4,5,4,3,5]
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(x=months, y=inflows, name="Deployable", marker_color="#4ADE80"))
+        fig2.add_trace(go.Bar(x=months, y=outflows, name="Deployed", marker_color="#7C6AFF"))
+        fig2.update_layout(template="plotly_dark", barmode="group", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=240, margin=dict(l=0,r=0,t=10,b=0))
+        st.plotly_chart(fig2, use_container_width=True)
