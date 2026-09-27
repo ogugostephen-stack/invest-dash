@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Invest Dash V3 Pro", layout="wide")
 
-# --- CSS ---
 st.markdown("""
 <style>
 .stApp { background:#0E0E10; color:#E8E8E8; }
@@ -19,7 +18,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Top strip ---
 MARKETS = {"S&P 500":"^GSPC","DOW":"^DJI","NASDAQ":"^IXIC","VIX":"^VIX"}
 html="<div style='background:#111114;border:1px solid #232329;border-radius:12px;padding:8px 14px;display:flex;gap:20px;margin-bottom:14px;overflow-x:auto'>"
 for n,s in MARKETS.items():
@@ -32,7 +30,6 @@ for n,s in MARKETS.items():
 html+="</div>"
 st.markdown(html, unsafe_allow_html=True)
 
-# --- State for editable lists ---
 if "holdings" not in st.session_state:
     st.session_state.holdings = ["GOOGL","AMZN","AVGO","META","AMD","CELH","ADBE","SOFI"]
 if "watchlist" not in st.session_state:
@@ -75,90 +72,100 @@ def get_safe(ticker):
     except:
         return None
 
-# --- TABS ORDER: Ticker first, Portfolio last ---
+# --- AESTHETIC HEADER ABOVE TABS ---
+strike_count = 0
+for s in st.session_state.holdings:
+    dd=get_safe(s)
+    if dd and ("STRIKE" in dd['v'] or "BUY" in dd['v']):
+        strike_count+=1
+
+st.markdown(f"""
+<div style='background: radial-gradient(120% 120% at 0% 0%, #1A2E22 0%, #15151A 50%, #12121A 100%); border:1px solid #232329; border-radius:20px; padding:22px 24px; margin-bottom:16px; position:relative; overflow:hidden'>
+    <div style='display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px'>
+        <div>
+            <div style='display:flex;align-items:center;gap:10px;flex-wrap:wrap'>
+                <div style='width:32px;height:32px;background:#4ADE80;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0E0E10'>$</div>
+                <div style='font-weight:800;font-size:22px'>INVEST DASH <span style='color:#4ADE80'>V3 PRO</span></div>
+                <div style='background:#0E2A1A;border:1px solid #14532D;color:#4ADE80;font-family:monospace;font-size:10px;padding:4px 8px;border-radius:99px'>LIVE • V3 PRO LOGIC</div>
+            </div>
+            <div style='margin-top:10px;color:#8B8B93;font-family:monospace;font-size:12px'>Structural Risk + Dist to Floor + RSI Holy Grail + T1/T2/T3 — Your original edge, untouched.</div>
+            <div style='display:flex;gap:12px;margin-top:16px;flex-wrap:wrap'>
+                <div style='background:#15151A;border:1px solid #232329;border-radius:12px;padding:10px 14px'><div class='small'>HOLDINGS</div><div style='font-size:20px;font-weight:700'>{len(st.session_state.holdings)}</div></div>
+                <div style='background:#15151A;border:1px solid #232329;border-radius:12px;padding:10px 14px'><div class='small'>WATCHLIST</div><div style='font-size:20px;font-weight:700'>{len(st.session_state.watchlist)}</div></div>
+                <div style='background:#0E2A1A;border:1px solid #14532D;border-radius:12px;padding:10px 14px'><div class='small' style='color:#86EFAC'>OPPORTUNITIES</div><div style='font-size:20px;font-weight:700;color:#4ADE80'>{strike_count} STRIKE</div></div>
+            </div>
+        </div>
+        <div style='text-align:right'>
+            <div class='small'>FOCUS MODE</div>
+            <div style='font-family:monospace;font-size:12px;color:#E8E8E8;margin-top:6px'>TICKER SEARCH → ANALYZE<br>WATCHLIST → TRACK<br>PORTFOLIO → EXECUTE</div>
+            <div style='margin-top:14px;background:#1A1A23;border:1px solid #2A2A35;border-radius:10px;padding:8px 12px;display:inline-block'><div class='small'>STRATEGY</div><div style='font-size:12px;font-weight:700'>Buy Low. Sell Never. DCA T1-T3.</div></div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# TABS
 tab_ticker, tab_watchlist, tab_portfolio = st.tabs(["🔍 Ticker Search (Main)","👀 Watchlist","📊 Portfolio"])
 
-# 1. TICKER SEARCH - MAIN PAGE
 with tab_ticker:
-    st.markdown("<div class='card'><div class='small'>MAIN PAGE • SEARCH ALL STOCKS • V3 PRO LOGIC</div><div style='font-weight:700;font-size:18px'>Type any ticker: AAPL, MSFT, SPY, BTC-USD, etc.</div></div>", unsafe_allow_html=True)
-    c1,c2=st.columns([3,1])
-    with c1:
-        query = st.text_input("Ticker", value="NVDA", placeholder="e.g. AAPL").upper().strip()
-    with c2:
-        st.markdown("<div class='small' style='margin-top:28px'>Add to list after search</div>")
-
+    st.markdown("<div class='card'><div class='small'>MAIN PAGE • SEARCH ALL STOCKS</div><div style='font-weight:700'>Type any ticker: AAPL, MSFT, SPY, BTC-USD</div></div>", unsafe_allow_html=True)
+    query = st.text_input("Ticker", value="NVDA", placeholder="e.g. AAPL").upper().strip()
     if query:
         d=get_safe(query)
         if not d:
             st.error(f"Could not fetch {query}")
         else:
-            st.markdown(f"<div class='card' style='border-color:#4ADE80'><div style='display:flex;justify-content:space-between'><b style='font-size:28px'>{query} ${d['live']:.2f}</b><span class='badge {d['vc']}' style='font-size:14px'>{d['v']}</span></div><div style='display:flex;gap:10px;margin-top:12px'><div class='card' style='flex:1;margin:0'><div class='small'>DIST TO FLOOR</div><div style='font-size:18px;font-weight:700'>{d['dist']*100:+.1f}%</div><div class='small'>Floor ${d['sma200']:.2f}</div></div><div class='card' style='flex:1;margin:0'><div class='small'>STRUCT RISK</div><div style='font-size:18px;font-weight:700'>{d['struct']*100:+.1f}%</div></div><div class='card' style='flex:1;margin:0'><div class='small'>RSI 14</div><div style='font-size:18px;font-weight:700'>{d['rsi']:.1f}</div></div></div><div class='small' style='margin-top:10px'>Auto T1 {d['sma200']*1.05:.2f} | T2 Floor {d['sma200']:.2f} | T3 Panic {d['sma200']*0.92:.2f}</div></div>", unsafe_allow_html=True)
-            
-            b1,b2=st.columns(2)
-            with b1:
+            st.markdown(f"<div class='card' style='border-color:#4ADE80'><div style='display:flex;justify-content:space-between'><b style='font-size:28px'>{query} ${d['live']:.2f}</b><span class='badge {d['vc']}' style='font-size:14px'>{d['v']}</span></div><div style='display:flex;gap:10px;margin-top:12px;flex-wrap:wrap'><div class='card' style='flex:1;margin:0'><div class='small'>DIST TO FLOOR</div><div style='font-size:18px;font-weight:700'>{d['dist']*100:+.1f}%</div></div><div class='card' style='flex:1;margin:0'><div class='small'>STRUCT RISK</div><div style='font-size:18px;font-weight:700'>{d['struct']*100:+.1f}%</div></div><div class='card' style='flex:1;margin:0'><div class='small'>RSI 14</div><div style='font-size:18px;font-weight:700'>{d['rsi']:.1f}</div></div></div><div class='small' style='margin-top:10px'>Auto T1 {d['sma200']*1.05:.2f} | T2 Floor {d['sma200']:.2f} | T3 Panic {d['sma200']*0.92:.2f}</div></div>", unsafe_allow_html=True)
+            c1,c2=st.columns(2)
+            with c1:
                 if st.button(f"➕ Add {query} to Portfolio", key=f"add_p_{query}"):
                     if query not in st.session_state.holdings:
-                        st.session_state.holdings.append(query)
-                        st.success(f"{query} added to Portfolio")
-            with b2:
+                        st.session_state.holdings.append(query); st.success(f"{query} added to Portfolio")
+            with c2:
                 if st.button(f"➕ Add {query} to Watchlist", key=f"add_w_{query}"):
                     if query not in st.session_state.watchlist:
-                        st.session_state.watchlist.append(query)
-                        st.success(f"{query} added to Watchlist")
-
+                        st.session_state.watchlist.append(query); st.success(f"{query} added to Watchlist")
             close=d['close']
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=close.index, y=close, name=query))
-            fig.add_trace(go.Scatter(x=close.index, y=close.rolling(200).mean(), name="200 SMA Floor", line=dict(dash="dash")))
+            fig.add_trace(go.Scatter(x=close.index, y=close.rolling(200).mean(), name="200 SMA", line=dict(dash="dash")))
             fig.add_trace(go.Scatter(x=close.index, y=close.rolling(50).mean(), name="50 SMA"))
             fig.update_layout(template="plotly_dark", paper_bgcolor="#15151A", plot_bgcolor="#15151A", height=350, margin=dict(l=0,r=0,t=10,b=0))
             st.plotly_chart(fig, use_container_width=True)
 
-# 2. WATCHLIST - EDITABLE
 with tab_watchlist:
     st.markdown("**Watchlist — Editable**")
-    new_w = st.text_input("Add ticker to watchlist", placeholder="e.g. ELF").upper().strip()
+    new_w = st.text_input("Add ticker to watchlist", placeholder="e.g. ELF", key="new_w").upper().strip()
     if st.button("Add to Watchlist") and new_w:
         if new_w not in st.session_state.watchlist:
-            st.session_state.watchlist.append(new_w)
-            st.rerun()
-    
+            st.session_state.watchlist.append(new_w); st.rerun()
     for sym in st.session_state.watchlist[:]:
         d=get_safe(sym)
-        col1,col2,col3=st.columns([4,1,1])
+        col1,col2=st.columns([5,1])
         with col1:
             if d:
                 st.markdown(f"<div class='card'><b>{sym} ${d['live']:.2f}</b> <span class='badge {d['vc']}' style='float:right'>{d['v']}</span><div class='small'>RSI {d['rsi']:.0f} | Dist {d['dist']*100:+.0f}%</div></div>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<div class='card'><b>{sym}</b> <span class='small'>failed to fetch</span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='card'><b>{sym}</b> <span class='small'>failed</span></div>", unsafe_allow_html=True)
         with col2:
-            if st.button("✏️", key=f"edit_w_{sym}"):
-                st.session_state.holdings.append(sym)
-                st.success(f"Moved {sym} to Portfolio")
-        with col3:
             if st.button("🗑️", key=f"del_w_{sym}"):
-                st.session_state.watchlist.remove(sym)
-                st.rerun()
+                st.session_state.watchlist.remove(sym); st.rerun()
 
-# 3. PORTFOLIO - LAST TAB, EDITABLE
 with tab_portfolio:
-    st.markdown("**Portfolio — Last Tab, Editable / Deletable**")
-    new_p = st.text_input("Add ticker to portfolio", placeholder="e.g. GOOGL").upper().strip()
+    st.markdown("**Portfolio — Last Tab, Editable**")
+    new_p = st.text_input("Add ticker to portfolio", placeholder="e.g. GOOGL", key="new_p").upper().strip()
     if st.button("Add to Portfolio") and new_p:
         if new_p not in st.session_state.holdings:
-            st.session_state.holdings.append(new_p)
-            st.rerun()
-
+            st.session_state.holdings.append(new_p); st.rerun()
     for sym in st.session_state.holdings[:]:
         d=get_safe(sym)
         c1,c2=st.columns([5,1])
         with c1:
             if d:
                 sup=SUPPORT_DATA.get(sym, {})
-                st.markdown(f"<div class='card'><div style='display:flex;justify-content:space-between'><b>{sym} ${d['live']:.2f}</b><span class='badge {d['vc']}'>{d['v']}</span></div><div class='small'>Dist {d['dist']*100:+.1f}% | Struct {d['struct']*100:+.1f}% | RSI {d['rsi']:.0f} | Floor ${d['sma200']:.0f} | T1 {sup.get('t1','-')} T2 {sup.get('t2','-')} T3 {sup.get('t3','-')}</div></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='card'><div style='display:flex;justify-content:space-between'><b>{sym} ${d['live']:.2f}</b><span class='badge {d['vc']}'>{d['v']}</span></div><div class='small'>Dist {d['dist']*100:+.1f}% | Struct {d['struct']*100:+.1f}% | RSI {d['rsi']:.0f} | Floor ${d['sma200']:.0f}</div></div>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<div class='card'><b>{sym}</b> <span class='small'>fetch failed</span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='card'><b>{sym}</b> <span class='small'>failed</span></div>", unsafe_allow_html=True)
         with c2:
-            if st.button("🗑️ Delete", key=f"del_p_{sym}"):
-                st.session_state.holdings.remove(sym)
-                st.rerun()
+            if st.button("🗑️", key=f"del_p_{sym}"):
+                st.session_state.holdings.remove(sym); st.rerun()
